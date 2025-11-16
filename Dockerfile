@@ -14,6 +14,7 @@ ENV TS_STATE_DIR=/var/lib/tailscale
 CMD /usr/sbin/sshd && \
     tailscaled --tun=userspace-networking --state=${TS_STATE_DIR}/tailscaled.state --socket=/var/run/tailscale/tailscaled.sock & \
     sleep 5 && \
-    tailscale up --authkey=${TS_AUTHKEY} --ssh --hostname=railway-vps && \
-    echo "Tailscale IP: $(tailscale ip -4)" && \
+    tailscale up --authkey=${TS_AUTHKEY} --hostname=railway-vps && \
+    TS_IP=$(tailscale ip -4) && hostname $TS_IP && \
+    echo "Tailscale IP: $TS_IP" && \
     tail -f /dev/null
