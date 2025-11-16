@@ -15,6 +15,7 @@ CMD /usr/sbin/sshd && \
     tailscaled --tun=userspace-networking --state=${TS_STATE_DIR}/tailscaled.state --socket=/var/run/tailscale/tailscaled.sock & \
     sleep 5 && \
     tailscale up --authkey=${TS_AUTHKEY} --hostname=railway-vps && \
-    TS_IP=$(tailscale ip -4) && hostname $TS_IP && \
+    TS_IP=$(tailscale ip -4) && \
+    echo "export PS1=\"\u@$TS_IP:\w# \"" >> /root/.bashrc && \
     echo "Tailscale IP: $TS_IP" && \
     tail -f /dev/null
