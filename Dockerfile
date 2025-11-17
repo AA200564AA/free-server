@@ -1,4 +1,6 @@
 FROM ubuntu:24.04
+
+
 # Install everything: SSH, ttyd, FRP + dev tools + HAProxy for PROXY protocol
 RUN apt-get update && apt-get install -y \
     openssh-server \
