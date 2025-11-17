@@ -62,26 +62,25 @@ RUN rm -f /etc/update-motd.d/* && \
     echo 'echo " Users: $(who | wc -l) | Load: $(uptime | awk '\''{print $10}'\'')"' >> /etc/update-motd.d/00-exo && \
     echo 'echo "====================================="' >> /etc/update-motd.d/00-exo && \
     chmod +x /etc/update-motd.d/00-exo
-# HAProxy config for PROXY protocol (to preserve real client IP for SSH) + timeouts
+# HAProxy config for PROXY protocol (preserve real client IP in HAProxy logs)
 RUN echo 'global' > /etc/haproxy/haproxy.cfg && \
-    echo '    log /dev/log local0' >> /etc/haproxy/haproxy.cfg && \
-    echo '    log /dev/log local1 notice' >> /etc/haproxy/haproxy.cfg && \
+    echo ' log /dev/log local0' >> /etc/haproxy/haproxy.cfg && \
+    echo ' log /dev/log local1 notice' >> /etc/haproxy/haproxy.cfg && \
     echo '' >> /etc/haproxy/haproxy.cfg && \
     echo 'defaults' >> /etc/haproxy/haproxy.cfg && \
-    echo '    log global' >> /etc/haproxy/haproxy.cfg && \
-    echo '    mode tcp' >> /etc/haproxy/haproxy.cfg && \
-    echo '    option tcplog' >> /etc/haproxy/haproxy.cfg && \
-    echo '    timeout client  1m' >> /etc/haproxy/haproxy.cfg && \
-    echo '    timeout connect 10s' >> /etc/haproxy/haproxy.cfg && \
-    echo '    timeout server  1m' >> /etc/haproxy/haproxy.cfg && \
+    echo ' log global' >> /etc/haproxy/haproxy.cfg && \
+    echo ' mode tcp' >> /etc/haproxy/haproxy.cfg && \
+    echo ' option tcplog' >> /etc/haproxy/haproxy.cfg && \
+    echo ' timeout client 1m' >> /etc/haproxy/haproxy.cfg && \
+    echo ' timeout connect 10s' >> /etc/haproxy/haproxy.cfg && \
+    echo ' timeout server 1m' >> /etc/haproxy/haproxy.cfg && \
     echo '' >> /etc/haproxy/haproxy.cfg && \
     echo 'frontend ssh' >> /etc/haproxy/haproxy.cfg && \
-    echo '    bind *:22' >> /etc/haproxy/haproxy.cfg && \
-    echo '    default_backend ssh_backend' >> /etc/haproxy/haproxy.cfg && \
+    echo ' bind *:22 accept-proxy' >> /etc/haproxy/haproxy.cfg && \
+    echo ' default_backend ssh_backend' >> /etc/haproxy/haproxy.cfg && \
     echo '' >> /etc/haproxy/haproxy.cfg && \
     echo 'backend ssh_backend' >> /etc/haproxy/haproxy.cfg && \
-    echo '    server ssh 127.0.0.1:2222 send-proxy-v2' >> /etc/haproxy/haproxy.cfg
-# Set timezone to EET (Africa/Cairo)
+    echo ' server ssh 127.0.0.1:2222' >> /etc/haproxy/haproxy.cfg
 RUN ln -sf /usr/share/zoneinfo/Africa/Cairo /etc/localtime && \
     echo "Africa/Cairo" > /etc/timezone
 EXPOSE 22 7681
@@ -100,9 +99,10 @@ echo 'remote_port = 20002' >> /frpc.toml && \
 echo 'use_encryption = true' >> /frpc.toml && \
 echo 'use_compression = true' >> /frpc.toml && \
 echo 'proxy_protocol_version = v2' >> /frpc.toml && \
-haproxy -f /etc/haproxy/haproxy.cfg & \
 service ssh start && \
+haproxy -f /etc/haproxy/haproxy.cfg & \
+sleep 1 && \
 frpc -c /frpc.toml > /frp.log 2>&1 & \
-ttyd -p 7681 /bin/login -t titleFixed='a7medRailway VPS' -t fontSize=17 & \
+ttyd -p 7681 -W /bin/login -t titleFixed='a7medRailway VPS' -t fontSize=17 & \
 echo \"=== READY === SSH: ssh root@exo.ssh.cx -p 20002 Web on port 7681\" && \
 tail -f /dev/null"]
