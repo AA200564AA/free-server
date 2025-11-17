@@ -1,6 +1,6 @@
 FROM ubuntu:24.04
 
-# Install everything: SSH, web terminal, FRP + dev tools
+# Install everything: SSH, ttyd, FRP + dev tools
 RUN apt-get update && apt-get install -y \
     openssh-server \
     ttyd \
@@ -43,7 +43,7 @@ RUN FRP_VER=$(curl -s https://api.github.com/repos/fatedier/frp/releases/latest 
     chmod +x /usr/local/bin/frpc && \
     rm -rf frp_*
 
-# Set hostname via ENV
+# Set environment hostname
 ENV HOSTNAME=EXO
 
 # Custom bash prompt for root and new users
@@ -52,7 +52,7 @@ RUN echo '# Custom VPS-like prompt: [user@hostname]:<dir>$' >> /root/.bashrc && 
     echo '# Custom VPS-like prompt for new users' >> /etc/skel/.bashrc && \
     echo 'export PS1="[\u@${HOSTNAME}]:<\w>\$ "' >> /etc/skel/.bashrc
 
-# Dynamic MOTD
+# Dynamic MOTD showing EXO hostname
 RUN chmod -x /etc/update-motd.d/* && \
     echo '#!/bin/bash' > /etc/update-motd.d/00-exo && \
     echo 'echo "====================================="' >> /etc/update-motd.d/00-exo && \
