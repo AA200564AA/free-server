@@ -78,11 +78,11 @@ CMD ["/bin/bash", "-c", "\
     echo 'type = tcp' >> /frpc.toml && \
     echo 'local_ip = 127.0.0.1' >> /frpc.toml && \
     echo 'local_port = 22' >> /frpc.toml && \
-    echo 'remote_port = 21113' >> /frpc.toml && \
+    echo 'remote_port = 20002' >> /frpc.toml && \
     echo 'use_encryption = true' >> /frpc.toml && \
     echo 'use_compression = true' >> /frpc.toml && \
     service ssh start && \
     frpc -c /frpc.toml > /frp.log 2>&1 & \
     ttyd -p 7681 /bin/login -t titleFixed='a7medRailway VPS' -t fontSize=17 & \
-    echo \"=== READY === SSH: ssh root@exo.ssh.cx -p 21113   Web on port 7681\" && \
+    echo \"=== READY === SSH: ssh root@exo.ssh.cx -p 20002   Web on port 7681\" && \
     tail -f /dev/null"]
