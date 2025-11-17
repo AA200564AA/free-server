@@ -28,21 +28,19 @@ RUN FRP_VER=$(curl -s https://api.github.com/repos/fatedier/frp/releases/latest 
 EXPOSE 22 7681
 
 CMD ["/bin/bash", "-c", "\
-    cat > /frpc.toml <<EOF
-[common]
-server_addr = s3.serv00.net
-server_port = 17000
-token = a7medVPS2025SuperSecretTokenXx200564#A12345
-
-[[proxies]]
-name = railway_ssh
-type = tcp
-local_ip = 127.0.0.1
-local_port = 22
-remote_port = 21113
-use_encryption = true
-use_compression = true
-EOF
+    echo '[common]' > /frpc.toml && \
+    echo 'server_addr = s3.serv00.net' >> /frpc.toml && \
+    echo 'server_port = 17000' >> /frpc.toml && \
+    echo 'token = a7medVPS2025SuperSecretTokenXx200564#A12345' >> /frpc.toml && \
+    echo '' >> /frpc.toml && \
+    echo '[[proxies]]' >> /frpc.toml && \
+    echo 'name = railway_ssh' >> /frpc.toml && \
+    echo 'type = tcp' >> /frpc.toml && \
+    echo 'local_ip = 127.0.0.1' >> /frpc.toml && \
+    echo 'local_port = 22' >> /frpc.toml && \
+    echo 'remote_port = 21113' >> /frpc.toml && \
+    echo 'use_encryption = true' >> /frpc.toml && \
+    echo 'use_compression = true' >> /frpc.toml && \
     service ssh start && \
     frpc -c /frpc.toml > /frp.log 2>&1 & \
     ttyd -p 7681 /bin/login -t titleFixed='a7med Railway VPS' -t fontSize=17 & \
