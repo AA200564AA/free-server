@@ -28,7 +28,7 @@ RUN apt-get update && apt-get install -y \
     haproxy \
     && mkdir -p /var/run/sshd \
     && ssh-keygen -A \
-    && sed -i 's/#Port 22/Port 2222/' /etc/ssh/sshd_config
+    && sed -i 's/#Port 22/Port 2222/' /etc/ssh/sshd_config \
     && sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config \
     && sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
