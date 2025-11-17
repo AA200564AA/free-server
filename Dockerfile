@@ -1,6 +1,6 @@
 FROM ubuntu:24.04
 
-# Install everything: SSH, web terminal, FRP + full dev tools
+# Install everything: SSH, web terminal, FRP + dev tools
 RUN apt-get update && apt-get install -y \
     openssh-server \
     ttyd \
@@ -35,7 +35,7 @@ RUN apt-get update && apt-get install -y \
 # Set root password
 RUN echo 'root:xx200564#A' | chpasswd
 
-# Download latest frp automatically
+# Download latest FRP automatically
 RUN FRP_VER=$(curl -s https://api.github.com/repos/fatedier/frp/releases/latest | grep tag_name | cut -d '"' -f 4 | sed 's/v//') && \
     wget https://github.com/fatedier/frp/releases/download/v${FRP_VER}/frp_${FRP_VER}_linux_amd64.tar.gz && \
     tar xzvf frp_${FRP_VER}_linux_amd64.tar.gz && \
@@ -43,23 +43,26 @@ RUN FRP_VER=$(curl -s https://api.github.com/repos/fatedier/frp/releases/latest 
     chmod +x /usr/local/bin/frpc && \
     rm -rf frp_*
 
-# Set custom hostname via ENV (no need to run hostname in CMD)
+# Set hostname and map in hosts
+RUN echo "EXO" > /etc/hostname && \
+    echo "127.0.0.1 EXO" >> /etc/hosts
 ENV HOSTNAME=EXO
 
-# Custom bash prompt for all users
+# Custom bash prompt for root and new users
 RUN echo '# Custom VPS-like prompt: [user@hostname]:<dir>$' >> /root/.bashrc && \
     echo 'export PS1="[\u@\h]:<\w>\$ "' >> /root/.bashrc && \
-    echo '# Custom VPS-like prompt: [user@hostname]:<dir>$' >> /etc/skel/.bashrc && \
+    echo '# Custom VPS-like prompt for new users' >> /etc/skel/.bashrc && \
     echo 'export PS1="[\u@\h]:<\w>\$ "' >> /etc/skel/.bashrc
 
-# Clean MOTD
+# Dynamic MOTD
 RUN chmod -x /etc/update-motd.d/* && \
-    echo "=====================================" > /etc/motd && \
-    echo "  Welcome to EXO VPS" >> /etc/motd && \
-    echo "  Hostname: EXO | Uptime: \$(uptime -p)" >> /etc/motd && \
-    echo "  Users: \$(who | wc -l) | Load: \$(uptime | awk '{print \$10}')" >> /etc/motd && \
-    echo "=====================================" >> /etc/motd && \
-    echo "" >> /etc/motd
+    echo '#!/bin/bash' > /etc/update-motd.d/00-exo && \
+    echo 'echo "====================================="' >> /etc/update-motd.d/00-exo && \
+    echo 'echo "  Welcome to EXO VPS"' >> /etc/update-motd.d/00-exo && \
+    echo 'echo "  Hostname: $(hostname) | Uptime: $(uptime -p)"' >> /etc/update-motd.d/00-exo && \
+    echo 'echo "  Users: $(who | wc -l) | Load: $(uptime | awk '\''{print $10}'\'')"' >> /etc/update-motd.d/00-exo && \
+    echo 'echo "====================================="' >> /etc/update-motd.d/00-exo && \
+    chmod +x /etc/update-motd.d/00-exo
 
 EXPOSE 22 7681
 
