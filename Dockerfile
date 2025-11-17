@@ -43,23 +43,21 @@ RUN FRP_VER=$(curl -s https://api.github.com/repos/fatedier/frp/releases/latest 
     chmod +x /usr/local/bin/frpc && \
     rm -rf frp_*
 
-# Set hostname and map in hosts
-RUN echo "EXO" > /etc/hostname && \
-    echo "127.0.0.1 EXO" >> /etc/hosts
+# Set hostname via ENV
 ENV HOSTNAME=EXO
 
 # Custom bash prompt for root and new users
 RUN echo '# Custom VPS-like prompt: [user@hostname]:<dir>$' >> /root/.bashrc && \
-    echo 'export PS1="[\u@\h]:<\w>\$ "' >> /root/.bashrc && \
+    echo 'export PS1="[\u@${HOSTNAME}]:<\w>\$ "' >> /root/.bashrc && \
     echo '# Custom VPS-like prompt for new users' >> /etc/skel/.bashrc && \
-    echo 'export PS1="[\u@\h]:<\w>\$ "' >> /etc/skel/.bashrc
+    echo 'export PS1="[\u@${HOSTNAME}]:<\w>\$ "' >> /etc/skel/.bashrc
 
 # Dynamic MOTD
 RUN chmod -x /etc/update-motd.d/* && \
     echo '#!/bin/bash' > /etc/update-motd.d/00-exo && \
     echo 'echo "====================================="' >> /etc/update-motd.d/00-exo && \
     echo 'echo "  Welcome to EXO VPS"' >> /etc/update-motd.d/00-exo && \
-    echo 'echo "  Hostname: $(hostname) | Uptime: $(uptime -p)"' >> /etc/update-motd.d/00-exo && \
+    echo 'echo "  Hostname: ${HOSTNAME} | Uptime: $(uptime -p)"' >> /etc/update-motd.d/00-exo && \
     echo 'echo "  Users: $(who | wc -l) | Load: $(uptime | awk '\''{print $10}'\'')"' >> /etc/update-motd.d/00-exo && \
     echo 'echo "====================================="' >> /etc/update-motd.d/00-exo && \
     chmod +x /etc/update-motd.d/00-exo
