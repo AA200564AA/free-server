@@ -70,7 +70,6 @@ echo 'local_port = 22' >> /frpc.toml && \
 echo 'remote_port = 20002' >> /frpc.toml && \
 echo 'use_encryption = true' >> /frpc.toml && \
 echo 'use_compression = true' >> /frpc.toml && \
-hostname ${MY_HOST} && \
 service ssh start && \
 frpc -c /frpc.toml > /frp.log 2>&1 & \
 ttyd -p 7681 /bin/login -t titleFixed='a7medRailway VPS' -t fontSize=17 & \
