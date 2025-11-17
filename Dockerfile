@@ -44,15 +44,18 @@ RUN FRP_VER=$(curl -s https://api.github.com/repos/fatedier/frp/releases/latest 
 # Set /etc/hostname (try to make hostname command show EXO, though Railway may override)
 RUN echo "EXO" > /etc/hostname && \
     echo "127.0.0.1 EXO" >> /etc/hosts
-# Custom bash prompt for root and new users + alias for hostname
+# Global custom bash prompt for all users (login/non-login shells)
+RUN echo 'export PS1="[\u@EXO]:<\w>\$ "' >> /etc/profile && \
+    echo 'export PS1="[\u@EXO]:<\w>\$ "' >> /etc/bash.bashrc
+# Custom bash prompt for root and new users (backup/override)
 RUN echo '# Custom VPS-like prompt: [user@hostname]:<dir>$' >> /root/.bashrc && \
     echo 'export PS1="[\u@EXO]:<\w>\$ "' >> /root/.bashrc && \
     echo 'alias hostname="echo EXO"' >> /root/.bashrc && \
     echo '# Custom VPS-like prompt for new users' >> /etc/skel/.bashrc && \
     echo 'export PS1="[\u@EXO]:<\w>\$ "' >> /etc/skel/.bashrc && \
     echo 'alias hostname="echo EXO"' >> /etc/skel/.bashrc
-# Dynamic MOTD showing EXO hostname
-RUN chmod -x /etc/update-motd.d/* && \
+# Dynamic MOTD: Remove all defaults, add only custom
+RUN rm -f /etc/update-motd.d/* && \
     echo '#!/bin/bash' > /etc/update-motd.d/00-exo && \
     echo 'echo "====================================="' >> /etc/update-motd.d/00-exo && \
     echo 'echo " Welcome to EXO VPS"' >> /etc/update-motd.d/00-exo && \
@@ -76,7 +79,7 @@ RUN echo 'global' > /etc/haproxy/haproxy.cfg && \
     echo '' >> /etc/haproxy/haproxy.cfg && \
     echo 'backend ssh_backend' >> /etc/haproxy/haproxy.cfg && \
     echo '    server ssh 127.0.0.1:2222 send-proxy-v2' >> /etc/haproxy/haproxy.cfg
-# Set timezone to EET (Egypt)
+# Set timezone to EET (Africa/Cairo)
 RUN ln -sf /usr/share/zoneinfo/Africa/Cairo /etc/localtime && \
     echo "Africa/Cairo" > /etc/timezone
 EXPOSE 22 7681
