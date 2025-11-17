@@ -42,8 +42,7 @@ RUN FRP_VER=$(curl -s https://api.github.com/repos/fatedier/frp/releases/latest 
     chmod +x /usr/local/bin/frpc && \
     rm -rf frp_*
 # Set /etc/hostname (try to make hostname command show EXO, though Railway may override)
-RUN echo "EXO" > /etc/hostname && \
-    echo "127.0.0.1 EXO" >> /etc/hosts
+RUN echo "EXO" > /etc/hostname
 # Global custom bash prompt for all users (login/non-login shells)
 RUN echo 'export PS1="[\u@EXO]:<\w>\$ "' >> /etc/profile && \
     echo 'export PS1="[\u@EXO]:<\w>\$ "' >> /etc/bash.bashrc
