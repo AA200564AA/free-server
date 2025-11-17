@@ -44,9 +44,10 @@ RUN FRP_VER=$(curl -s https://api.github.com/repos/fatedier/frp/releases/latest 
     chmod +x /usr/local/bin/frpc && \
     rm -rf frp_*
 
-# Set custom hostname "EXO" permanently
-RUN echo "EXO" > /etc/hostname && \
-    hostnamectl set-hostname EXO
+# Set custom hostname "EXO" (works in Docker)
+RUN echo "EXO" > /etc/hostname
+ENV HOSTNAME=EXO
+
 
 # Set custom prompt for root and new users (applies to everyone automatically)
 RUN echo '# Custom VPS-like prompt: [user@hostname]:<dir>$' >> /root/.bashrc && \
