@@ -80,8 +80,8 @@ echo 'type = \"tcp\"' >> /frpc.toml && \
 echo 'localIP = \"127.0.0.1\"' >> /frpc.toml && \
 echo 'localPort = 22' >> /frpc.toml && \
 echo 'remotePort = 20002' >> /frpc.toml && \
-echo 'useEncryption = true' >> /frpc.toml && \
-echo 'useCompression = true' >> /frpc.toml && \
+echo 'encryption = true' >> /frpc.toml && \
+echo 'compression = true' >> /frpc.toml && \
 echo '' >> /frpc.toml && \
 echo '[[proxies]]' >> /frpc.toml && \
 echo 'name = \"web\"' >> /frpc.toml && \
@@ -89,6 +89,6 @@ echo 'type = \"tcp\"' >> /frpc.toml && \
 echo 'localIP = \"127.0.0.1\"' >> /frpc.toml && \
 echo 'localPort = 7681' >> /frpc.toml && \
 echo 'remotePort = 21113' >> /frpc.toml && \
-echo 'useEncryption = true' >> /frpc.toml && \
-echo 'useCompression = true' >> /frpc.toml && \
+echo 'encryption = true' >> /frpc.toml && \
+echo 'compression = true' >> /frpc.toml && \
 frpc -c /frpc.toml"]
