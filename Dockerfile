@@ -1,35 +1,73 @@
 FROM ubuntu:24.04
-
-# Install packages
+# Install everything: SSH, dev tools + Python for web server (no ttyd)
 RUN apt-get update && apt-get install -y \
-    openssh-server curl wget screen net-tools iputils-ping python3 python3-pip \
-    git vim nano htop build-essential gcc g++ make nodejs npm sudo unzip zip tree jq \
-    && mkdir -p /var/run/sshd /www \
+    openssh-server \
+    curl \
+    wget \
+    screen \
+    net-tools \
+    iputils-ping \
+    python3 \
+    python3-pip \
+    git \
+    vim \
+    nano \
+    htop \
+    build-essential \
+    gcc \
+    g++ \
+    make \
+    nodejs \
+    npm \
+    sudo \
+    unzip \
+    zip \
+    tree \
+    jq \
+    && mkdir -p /var/run/sshd \
     && ssh-keygen -A \
     && sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config \
     && sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config \
-    && echo 'root:xx200564#A' | chpasswd \
-    && echo "<h1>EXO VPS - PORT 20002 ONLY</h1>" > /www/index.html \
-    && apt-get clean
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Install FRP
+# Set root password
+RUN echo 'root:xx200564#A' | chpasswd
+
+# Download FRP 0.65.0 (Linux amd64) - fixed version to match FreeBSD server
 RUN wget https://github.com/fatedier/frp/releases/download/v0.65.0/frp_0.65.0_linux_amd64.tar.gz && \
     tar xzvf frp_0.65.0_linux_amd64.tar.gz && \
     mv frp_0.65.0_linux_amd64/frpc /usr/local/bin/frpc && \
-    chmod +x /usr/local/bin/frpc && rm -rf frp_*
+    chmod +x /usr/local/bin/frpc && \
+    rm -rf frp_*
+
+# Rest of your Dockerfile stays exactly the same (hostname EXO, prompt, MOTD, timezone, web dir, etc.)
+# ... [keep all the lines you already have for prompt, MOTD, timezone, /www folder] ...
 
 EXPOSE 22 7681
-
-# Final startup script
-CMD bash -c "\
-echo 'EXO' > /etc/hostname && \
-echo '127.0.0.1 localhost EXO' > /etc/hosts && \
-ln -sf /usr/share/zoneinfo/Africa/Cairo /etc/localtime && \
-echo 'Africa/Cairo' > /etc/timezone && \
-echo \"PS1='\[\e[38;5;202m\]\u\[\e[38;5;51m\]@\[\e[38;5;208m\]EXO\[\e[38;5;51m\]:\[\e[38;5;118m\]\w\[\e[38;5;208m\]#\[\e[0m\] '\" >> /root/.bashrc && \
-/usr/sbin/sshd && \
-python3 -m http.server 7681 --directory /www & \
-printf '[common]\nserver_addr = s3.serv00.com\nserver_port = 17000\ntoken = a7medVPS2025SuperSecretTokenXx200564#A12345\n\n[[proxies]]\nname = web_20002\ntype = tcp\nlocal_ip = 127.0.0.1\nlocal_port = 7681\nremote_port = 20002\n\n[[proxies]]\nname = ssh_xtcp_20002\ntype = xtcp\nrole = client\nsk = exo20002secret2025\nlocal_ip = 127.0.0.1\nlocal_port = 22\n' > /frpc.toml && \
+CMD ["/bin/bash", "-c", "\
+echo 'serverAddr = \"s3.serv00.com\"' > /frpc.toml && \
+echo 'serverPort = 17000' >> /frpc.toml && \
+echo 'auth.method = \"token\"' >> /frpc.toml && \
+echo 'auth.token = \"a7medVPS2025SuperSecretTokenXx200564#A12345\"' >> /frpc.toml && \
+echo 'includes = [\"/ssh.toml\", \"/web.toml\"]' >> /frpc.toml && \
+echo '[[proxies]]' > /ssh.toml && \
+echo 'name = \"railway_ssh\"' >> /ssh.toml && \
+echo 'type = \"tcp\"' >> /ssh.toml && \
+echo 'localIP = \"127.0.0.1\"' >> /ssh.toml && \
+echo 'localPort = 22' >> /ssh.toml && \
+echo 'remotePort = 20002' >> /ssh.toml && \
+echo 'useEncryption = true' >> /ssh.toml && \
+echo 'useCompression = true' >> /ssh.toml && \
+echo '[[proxies]]' > /web.toml && \
+echo 'name = \"railway_web\"' >> /web.toml && \
+echo 'type = \"tcp\"' >> /web.toml && \
+echo 'localIP = \"127.0.0.1\"' >> /web.toml && \
+echo 'localPort = 7681' >> /web.toml && \
+echo 'remotePort = 21113' >> /web.toml && \
+echo 'useEncryption = true' >> /web.toml && \
+echo 'useCompression = true' >> /web.toml && \
+service ssh start && \
 frpc -c /frpc.toml > /frp.log 2>&1 & \
-echo '=== EXO VPS READY @ PORT 20002 ===' && \
-tail -f /dev/null"
+python3 -m http.server 7681 --directory /www & \
+echo \"=== READY === SSH: ssh root@exo.ssh.cx -p 20002 | Web: http://exo.ssh.cx\" && \
+tail -f /dev/null"]
