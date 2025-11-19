@@ -66,28 +66,28 @@ RUN ln -sf /usr/share/zoneinfo/Africa/Cairo /etc/localtime && \
 RUN mkdir -p /www && echo '<html><body><h1>Welcome to EXO VPS Web</h1><p>This is a placeholder page. Edit /www/index.html via SSH to customize.</p></body></html>' > /www/index.html
 EXPOSE 22 7681
 CMD ["/bin/bash", "-c", "\
-echo '[common]' > /frpc.toml && \
-echo 'server_addr = s3.serv00.net' >> /frpc.toml && \
-echo 'server_port = 17000' >> /frpc.toml && \
-echo 'token = a7medVPS2025SuperSecretTokenXx200564#A12345' >> /frpc.toml && \
+echo 'serverAddr = \"s3.serv00.net\"' > /frpc.toml && \
+echo 'serverPort = 17000' >> /frpc.toml && \
+echo 'auth.method = \"token\"' >> /frpc.toml && \
+echo 'auth.token = \"a7medVPS2025SuperSecretTokenXx200564#A12345\"' >> /frpc.toml && \
 echo '' >> /frpc.toml && \
 echo '[[proxies]]' >> /frpc.toml && \
-echo 'name = railway_ssh' >> /frpc.toml && \
-echo 'type = tcp' >> /frpc.toml && \
-echo 'local_ip = 127.0.0.1' >> /frpc.toml && \
-echo 'local_port = 22' >> /frpc.toml && \
-echo 'remote_port = 20002' >> /frpc.toml && \
-echo 'use_encryption = true' >> /frpc.toml && \
-echo 'use_compression = true' >> /frpc.toml && \
+echo 'name = \"ssh\"' >> /frpc.toml && \
+echo 'type = \"tcp\"' >> /frpc.toml && \
+echo 'localIP = \"127.0.0.1\"' >> /frpc.toml && \
+echo 'localPort = 22' >> /frpc.toml && \
+echo 'remotePort = 20002' >> /frpc.toml && \
+echo 'useEncryption = true' >> /frpc.toml && \
+echo 'useCompression = true' >> /frpc.toml && \
 echo '' >> /frpc.toml && \
 echo '[[proxies]]' >> /frpc.toml && \
-echo 'name = railway_web' >> /frpc.toml && \
-echo 'type = tcp' >> /frpc.toml && \
-echo 'local_ip = 127.0.0.1' >> /frpc.toml && \
-echo 'local_port = 7681' >> /frpc.toml && \
-echo 'remote_port = 21113' >> /frpc.toml && \
-echo 'use_encryption = true' >> /frpc.toml && \
-echo 'use_compression = true' >> /frpc.toml && \
+echo 'name = \"web\"' >> /frpc.toml && \
+echo 'type = \"tcp\"' >> /frpc.toml && \
+echo 'localIP = \"127.0.0.1\"' >> /frpc.toml && \
+echo 'localPort = 7681' >> /frpc.toml && \
+echo 'remotePort = 21113' >> /frpc.toml && \
+echo 'useEncryption = true' >> /frpc.toml && \
+echo 'useCompression = true' >> /frpc.toml && \
 service ssh start && \
 frpc -c /frpc.toml > /frp.log 2>&1 & \
 python3 -m http.server 7681 --directory /www & \
