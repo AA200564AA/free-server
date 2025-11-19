@@ -34,26 +34,22 @@ RUN apt-get update && apt-get install -y \
 # Set root password
 RUN echo 'root:xx200564#A' | chpasswd
 
-# Download FRP 0.65.0 (Linux amd64)
+# FRP 0.65.0
 RUN wget https://github.com/fatedier/frp/releases/download/v0.65.0/frp_0.65.0_linux_amd64.tar.gz && \
     tar xzvf frp_0.65.0_linux_amd64.tar.gz && \
     mv frp_0.65.0_linux_amd64/frpc /usr/local/bin/frpc && \
     chmod +x /usr/local/bin/frpc && \
     rm -rf frp_*
 
-# === ALL YOUR CUSTOM STUFF BELOW (nothing skipped) ===
-# Hostname EXO
+# === ALL YOUR CUSTOM STUFF (nothing skipped) ===
 RUN echo 'EXO' > /etc/hostname && \
     echo '127.0.0.1 EXO' >> /etc/hosts
 
-# Timezone
 ENV TZ=Africa/Cairo
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
-# Beautiful prompt + colors
-RUN echo "PS1='\[\e[38;5;202m\]\u\[\e[38;5;51m\]@\[\e[38;5;208m\]EX4\[\e[38;5;51m\]:\[\e[38;5;118m\]\w\[\e[38;5;208m\]#\[\e[0m\] '" >> /root/.bashrc
+RUN echo "PS1='\[\e[38;5;202m\]\u\[\e[38;5;51m\]@\[\e[38;5;208m\]EXO\[\e[38;5;51m\]:\[\e[38;5;118m\]\w\[\e[38;5;208m\]#\[\e[0m\] '" >> /root/.bashrc
 
-# MOTD
 RUN echo -e "\n\
 \e[38;5;208m ███████╗██╗  ██╗ ██████╗ \n\
 \e[38;5;208m ██╔════╝╚██╗██╔╝██╔═══██╗\n\
@@ -64,21 +60,20 @@ RUN echo -e "\n\
 \e[0m\n\
 Welcome to your free VPS powered by Railway + Serv00 + FRP\n\
 Web: https://exo.ssh.cx\n\
-.\n\
+SSH: ssh root@exo.ssh.cx -p 20002\n\
 " > /etc/motd
 
-# Create web folder
 RUN mkdir -p /www && echo "<h1>EXO VPS IS ALIVE!</h1>" > /www/index.html
 
 EXPOSE 22 7681
 
-# FIXED CMD: Two separate FRP connections = both ports always work
+# FIXED CMD — removed the single quotes around EOF so Docker builds correctly
 CMD ["/bin/bash", "-c", "\
 service ssh start && \
 python3 -m http.server 7681 --directory /www & \
 
 # SSH tunnel → port 20002
-frpc -c <(cat <<'EOF'
+frpc -c <(cat <<EOF
 [common]
 server_addr = s3.serv00.com
 server_port = 17000
@@ -96,7 +91,7 @@ EOF
 ) > /frp_ssh.log 2>&1 & \
 
 # Web tunnel → port 21113
-frpc -c <(cat <<'EOF'
+frpc -c <(cat <<EOF
 [common]
 server_addr = s3.serv00.com
 server_port = 17000
