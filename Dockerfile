@@ -68,8 +68,10 @@ EXPOSE 22 7681
 CMD ["/bin/bash", "-c", "\
 echo 'serverAddr = \"s3.serv00.net\"' > /frpc.toml && \
 echo 'serverPort = 17000' >> /frpc.toml && \
-echo 'auth.method = \"token\"' >> /frpc.toml && \
-echo 'auth.token = \"a7medVPS2025SuperSecretTokenXx200564#A12345\"' >> /frpc.toml && \
+echo '' >> /frpc.toml && \
+echo 'auth = { method = \"token\", token = \"a7medVPS2025SuperSecretTokenXx200564#A12345\" }' >> /frpc.toml && \
+echo 'log.level = \"info\"' >> /frpc.toml && \
+echo 'log.to = \"/frp.log\"' >> /frpc.toml && \
 echo '' >> /frpc.toml && \
 echo '[[proxies]]' >> /frpc.toml && \
 echo 'name = \"ssh\"' >> /frpc.toml && \
@@ -89,7 +91,7 @@ echo 'remotePort = 21113' >> /frpc.toml && \
 echo 'useEncryption = true' >> /frpc.toml && \
 echo 'useCompression = true' >> /frpc.toml && \
 service ssh start && \
-frpc -c /frpc.toml > /frp.log 2>&1 & \
+frpc -c /frpc.toml && \   # no & here so it runs in foreground and we see logs
 python3 -m http.server 7681 --directory /www & \
 echo \"=== READY === SSH: ssh root@exo.ssh.cx -p 20002 | Web: http://exo.ssh.cx\" && \
-tail -f /dev/null"]
+tail -f /frp.log"]   # show frpc log live
