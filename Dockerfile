@@ -1,10 +1,7 @@
 FROM ubuntu:24.04
-
-
-# Install everything: SSH, ttyd, FRP + dev tools + HAProxy for PROXY protocol
+# Install everything: SSH, dev tools + Python for web server (no ttyd)
 RUN apt-get update && apt-get install -y \
     openssh-server \
-    ttyd \
     curl \
     wget \
     screen \
@@ -65,6 +62,8 @@ RUN rm -f /etc/update-motd.d/* && \
 # Set timezone to EET (Africa/Cairo)
 RUN ln -sf /usr/share/zoneinfo/Africa/Cairo /etc/localtime && \
     echo "Africa/Cairo" > /etc/timezone
+# Create web directory and placeholder HTML
+RUN mkdir -p /www && echo '<html><body><h1>Welcome to EXO VPS Web</h1><p>This is a placeholder page. Edit /www/index.html via SSH to customize.</p></body></html>' > /www/index.html
 EXPOSE 22 7681
 CMD ["/bin/bash", "-c", "\
 echo '[common]' > /frpc.toml && \
@@ -80,8 +79,17 @@ echo 'local_port = 22' >> /frpc.toml && \
 echo 'remote_port = 20002' >> /frpc.toml && \
 echo 'use_encryption = true' >> /frpc.toml && \
 echo 'use_compression = true' >> /frpc.toml && \
+echo '' >> /frpc.toml && \
+echo '[[proxies]]' >> /frpc.toml && \
+echo 'name = railway_web' >> /frpc.toml && \
+echo 'type = tcp' >> /frpc.toml && \
+echo 'local_ip = 127.0.0.1' >> /frpc.toml && \
+echo 'local_port = 7681' >> /frpc.toml && \
+echo 'remote_port = 21113' >> /frpc.toml && \
+echo 'use_encryption = true' >> /frpc.toml && \
+echo 'use_compression = true' >> /frpc.toml && \
 service ssh start && \
 frpc -c /frpc.toml > /frp.log 2>&1 & \
-ttyd -p 7681 -W /bin/login -t titleFixed='a7medRailway VPS' -t fontSize=17 & \
-echo \"=== READY === SSH: ssh root@exo.ssh.cx -p 20002 Web on port 7681\" && \
+python3 -m http.server 7681 --directory /www & \
+echo \"=== READY === SSH: ssh root@exo.ssh.cx -p 20002 | Web: http://exo.ssh.cx\" && \
 tail -f /dev/null"]
