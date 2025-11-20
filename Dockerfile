@@ -1,6 +1,5 @@
 FROM ubuntu:24.04
 
-
 # Install everything: SSH, ttyd, FRP + dev tools + HAProxy for PROXY protocol
 RUN apt-get update && apt-get install -y \
     openssh-server \
@@ -32,8 +31,10 @@ RUN apt-get update && apt-get install -y \
     && sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config \
     && sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
+
 # Set root password
 RUN echo 'root:xx200564#A' | chpasswd
+
 # Download latest FRP automatically
 RUN FRP_VER=$(curl -s https://api.github.com/repos/fatedier/frp/releases/latest | grep tag_name | cut -d '"' -f 4 | sed 's/v//') && \
     wget https://github.com/fatedier/frp/releases/download/v${FRP_VER}/frp_${FRP_VER}_linux_amd64.tar.gz && \
@@ -41,19 +42,23 @@ RUN FRP_VER=$(curl -s https://api.github.com/repos/fatedier/frp/releases/latest 
     mv frp_${FRP_VER}_linux_amd64/frpc /usr/local/bin/frpc && \
     chmod +x /usr/local/bin/frpc && \
     rm -rf frp_*
-# Set /etc/hostname (try to make hostname command show EXO, though Railway may override)
+
+# Set /etc/hostname
 RUN echo "EXO" > /etc/hostname
-# Global custom bash prompt for all users (login/non-login shells)
+
+# Global custom bash prompt
 RUN echo 'export PS1="[\u@EXO]:<\w>\$ "' >> /etc/profile && \
     echo 'export PS1="[\u@EXO]:<\w>\$ "' >> /etc/bash.bashrc
-# Custom bash prompt for root and new users (backup/override)
+
+# Custom prompts for root + new users
 RUN echo '# Custom VPS-like prompt: [user@hostname]:<dir>$' >> /root/.bashrc && \
     echo 'export PS1="[\u@EXO]:<\w>\$ "' >> /root/.bashrc && \
     echo 'alias hostname="echo EXO"' >> /root/.bashrc && \
     echo '# Custom VPS-like prompt for new users' >> /etc/skel/.bashrc && \
     echo 'export PS1="[\u@EXO]:<\w>\$ "' >> /etc/skel/.bashrc && \
     echo 'alias hostname="echo EXO"' >> /etc/skel/.bashrc
-# Dynamic MOTD: Remove all defaults, add only custom
+
+# Dynamic MOTD
 RUN rm -f /etc/update-motd.d/* && \
     echo '#!/bin/bash' > /etc/update-motd.d/00-exo && \
     echo 'echo "====================================="' >> /etc/update-motd.d/00-exo && \
@@ -62,10 +67,13 @@ RUN rm -f /etc/update-motd.d/* && \
     echo 'echo " Users: $(who | wc -l) | Load: $(uptime | awk '\''{print $10}'\'')"' >> /etc/update-motd.d/00-exo && \
     echo 'echo "====================================="' >> /etc/update-motd.d/00-exo && \
     chmod +x /etc/update-motd.d/00-exo
-# Set timezone to EET (Africa/Cairo)
+
+# Set timezone Cairo
 RUN ln -sf /usr/share/zoneinfo/Africa/Cairo /etc/localtime && \
     echo "Africa/Cairo" > /etc/timezone
+
 EXPOSE 22 7681
+
 CMD ["/bin/bash", "-c", "\
 echo '[common]' > /frpc.toml && \
 echo 'server_addr = s3.serv00.net' >> /frpc.toml && \
@@ -82,6 +90,6 @@ echo 'use_encryption = true' >> /frpc.toml && \
 echo 'use_compression = true' >> /frpc.toml && \
 service ssh start && \
 frpc -c /frpc.toml > /frp.log 2>&1 & \
-ttyd -p 7681 -W /bin/login -t titleFixed='a7medRailway VPS' -t fontSize=17 & \
-echo \"=== READY === SSH: ssh root@exo.ssh.cx -p 20002 Web on port 7681\" && \
+python3 -m http.server 7681 --directory /www/ & \
+echo \"=== READY === SSH: ssh root@exo.ssh.cx -p 20002  |  WEB: :7681/ \" && \
 tail -f /dev/null"]
