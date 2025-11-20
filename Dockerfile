@@ -1,7 +1,10 @@
 FROM ubuntu:24.04
-# Install everything: SSH, dev tools + Python for web server (no ttyd)
+
+
+# Install everything: SSH, ttyd, FRP + dev tools + HAProxy for PROXY protocol
 RUN apt-get update && apt-get install -y \
     openssh-server \
+    ttyd \
     curl \
     wget \
     screen \
@@ -29,45 +32,56 @@ RUN apt-get update && apt-get install -y \
     && sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config \
     && sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
-
 # Set root password
 RUN echo 'root:xx200564#A' | chpasswd
-
-# Download FRP 0.65.0 (Linux amd64) - fixed version to match FreeBSD server
-RUN wget https://github.com/fatedier/frp/releases/download/v0.65.0/frp_0.65.0_linux_amd64.tar.gz && \
-    tar xzvf frp_0.65.0_linux_amd64.tar.gz && \
-    mv frp_0.65.0_linux_amd64/frpc /usr/local/bin/frpc && \
+# Download latest FRP automatically
+RUN FRP_VER=$(curl -s https://api.github.com/repos/fatedier/frp/releases/latest | grep tag_name | cut -d '"' -f 4 | sed 's/v//') && \
+    wget https://github.com/fatedier/frp/releases/download/v${FRP_VER}/frp_${FRP_VER}_linux_amd64.tar.gz && \
+    tar xzvf frp_${FRP_VER}_linux_amd64.tar.gz && \
+    mv frp_${FRP_VER}_linux_amd64/frpc /usr/local/bin/frpc && \
     chmod +x /usr/local/bin/frpc && \
     rm -rf frp_*
-
-# Rest of your Dockerfile stays exactly the same (hostname EXO, prompt, MOTD, timezone, web dir, etc.)
-# ... [keep all the lines you already have for prompt, MOTD, timezone, /www folder] ...
-
+# Set /etc/hostname (try to make hostname command show EXO, though Railway may override)
+RUN echo "EXO" > /etc/hostname
+# Global custom bash prompt for all users (login/non-login shells)
+RUN echo 'export PS1="[\u@EXO]:<\w>\$ "' >> /etc/profile && \
+    echo 'export PS1="[\u@EXO]:<\w>\$ "' >> /etc/bash.bashrc
+# Custom bash prompt for root and new users (backup/override)
+RUN echo '# Custom VPS-like prompt: [user@hostname]:<dir>$' >> /root/.bashrc && \
+    echo 'export PS1="[\u@EXO]:<\w>\$ "' >> /root/.bashrc && \
+    echo 'alias hostname="echo EXO"' >> /root/.bashrc && \
+    echo '# Custom VPS-like prompt for new users' >> /etc/skel/.bashrc && \
+    echo 'export PS1="[\u@EXO]:<\w>\$ "' >> /etc/skel/.bashrc && \
+    echo 'alias hostname="echo EXO"' >> /etc/skel/.bashrc
+# Dynamic MOTD: Remove all defaults, add only custom
+RUN rm -f /etc/update-motd.d/* && \
+    echo '#!/bin/bash' > /etc/update-motd.d/00-exo && \
+    echo 'echo "====================================="' >> /etc/update-motd.d/00-exo && \
+    echo 'echo " Welcome to EXO VPS"' >> /etc/update-motd.d/00-exo && \
+    echo 'echo " Hostname: EXO | Uptime: $(uptime -p)"' >> /etc/update-motd.d/00-exo && \
+    echo 'echo " Users: $(who | wc -l) | Load: $(uptime | awk '\''{print $10}'\'')"' >> /etc/update-motd.d/00-exo && \
+    echo 'echo "====================================="' >> /etc/update-motd.d/00-exo && \
+    chmod +x /etc/update-motd.d/00-exo
+# Set timezone to EET (Africa/Cairo)
+RUN ln -sf /usr/share/zoneinfo/Africa/Cairo /etc/localtime && \
+    echo "Africa/Cairo" > /etc/timezone
 EXPOSE 22 7681
 CMD ["/bin/bash", "-c", "\
-echo 'serverAddr = \"s3.serv00.com\"' > /frpc.toml && \
-echo 'serverPort = 17000' >> /frpc.toml && \
-echo 'auth.method = \"token\"' >> /frpc.toml && \
-echo 'auth.token = \"a7medVPS2025SuperSecretTokenXx200564#A12345\"' >> /frpc.toml && \
-echo 'includes = [\"/ssh.toml\", \"/web.toml\"]' >> /frpc.toml && \
-echo '[[proxies]]' > /ssh.toml && \
-echo 'name = \"railway_ssh\"' >> /ssh.toml && \
-echo 'type = \"tcp\"' >> /ssh.toml && \
-echo 'localIP = \"127.0.0.1\"' >> /ssh.toml && \
-echo 'localPort = 22' >> /ssh.toml && \
-echo 'remotePort = 20002' >> /ssh.toml && \
-echo 'useEncryption = true' >> /ssh.toml && \
-echo 'useCompression = true' >> /ssh.toml && \
-echo '[[proxies]]' > /web.toml && \
-echo 'name = \"railway_web\"' >> /web.toml && \
-echo 'type = \"tcp\"' >> /web.toml && \
-echo 'localIP = \"127.0.0.1\"' >> /web.toml && \
-echo 'localPort = 7681' >> /web.toml && \
-echo 'remotePort = 21113' >> /web.toml && \
-echo 'useEncryption = true' >> /web.toml && \
-echo 'useCompression = true' >> /web.toml && \
+echo '[common]' > /frpc.toml && \
+echo 'server_addr = s3.serv00.net' >> /frpc.toml && \
+echo 'server_port = 17000' >> /frpc.toml && \
+echo 'token = a7medVPS2025SuperSecretTokenXx200564#A12345' >> /frpc.toml && \
+echo '' >> /frpc.toml && \
+echo '[[proxies]]' >> /frpc.toml && \
+echo 'name = railway_ssh' >> /frpc.toml && \
+echo 'type = tcp' >> /frpc.toml && \
+echo 'local_ip = 127.0.0.1' >> /frpc.toml && \
+echo 'local_port = 22' >> /frpc.toml && \
+echo 'remote_port = 20002' >> /frpc.toml && \
+echo 'use_encryption = true' >> /frpc.toml && \
+echo 'use_compression = true' >> /frpc.toml && \
 service ssh start && \
 frpc -c /frpc.toml > /frp.log 2>&1 & \
-python3 -m http.server 7681 --directory /www & \
-echo \"=== READY === SSH: ssh root@exo.ssh.cx -p 20002 | Web: http://exo.ssh.cx\" && \
+ttyd -p 7681 -W /bin/login -t titleFixed='a7medRailway VPS' -t fontSize=17 & \
+echo \"=== READY === SSH: ssh root@exo.ssh.cx -p 20002 Web on port 7681\" && \
 tail -f /dev/null"]
